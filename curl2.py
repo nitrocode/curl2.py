@@ -7,46 +7,63 @@
 # Inspired by http://curl.trillworks.com/
 
 import sys
-if len(sys.argv) == 1:
-    cmd = 'curl "http://localhost:8080/api/v1/test" -H "Pragma: no-cache" -H "Accept-Encoding: gzip, deflate" -H "Accept-Language: en-US,en;q=0.8"'
-else:
-    cmd = sys.argv[1]
+import shlex
 
-# remove quotations
-cmd = cmd.replace('"', '')
-args = cmd.split()
-# check for POST
-post = 'post' if '-X' in args else 'get'
-# gather all the headers
-headers = {}
-url = args[1]
-for i, v in enumerate(args):
-    if '-H' in v:
-        headers[args[i + 1].replace(':', '')] = args[i + 2]
+def curlToPython(command):
+    """convert curl command to python script"""
+    # remove quotations
+    args = shlex.split(command)
+    # check for method
+    if '-X' in args:
+        method = args[args.index('-X') + 1]
+    else:
+        method = 'get'
 
-# print code to stdout
-print("#!/usr/bin/env python\nimport requests")
+    url = args[1]
+    # TODO: convert to dict comprehension?
+    # {args[i + 1].split(':')[0]: args[i + 1].split(':')[1].strip() for i, v in enumerate(args) if v == '-H'}
+    # gather all the headers
+    headers = {}
+    for i, v in enumerate(args):
+        if '-H' in v:
+            myargs = args[i + 1].split(':')
+            headers[myargs[0]] = myargs[1].strip()
 
-# check for a cookie
-bCook = 'Cookie' in headers
-if bCook:
-    cookie = headers['Cookie']
-    del headers['Cookie']
-    cook = cookie.split('=')
-    print("""
-cookies = {{
+    pycode = []
+
+    # print code to stdout
+    pycode.append("#!/usr/bin/env python")
+    pycode.append("import requests")
+
+    # check for a cookie
+    bCook = 'Cookie' in headers
+    if bCook:
+        cookie = headers['Cookie']
+        del headers['Cookie']
+        cook = cookie.split('=')
+        pycode.append("""cookies = {{
   '{COOKIEID}': '{COOKIE}'
 }}""".format(COOKIEID=cook[0], COOKIE=cook[1]))
 
-# assumes there are headers
-print("\nheaders = {")
-for k, v in headers.iteritems():
-    print("  '{k}': '{v}',".format(k=k, v=v))
-print("}")
+    # assumes there are headers
+    pycode.append("headers = {")
+    for k, v in headers.iteritems():
+        pycode.append("  '{k}': '{v}',".format(k=k, v=v))
+    pycode.append("}")
+    pycode.append("url = '{0}'".format(url))
+    # if there is a cookie, then attach it to the requests call
+    resstr = "res = requests.{method}(url, headers=headers".format(
+                method=method)
+    if bCook:
+        pycode.append("{0}, cookies=cookies)".format(resstr))
+    else:
+        pycode.append("{0})".format(resstr))
+    return pycode
 
-# if there is a cookie, then attach it to the requests call
-if bCook:
-    resstr = "\nres = requests.{post}('{url}', headers=headers, cookies=cookies)".format(post=post, url=url)
-else:
-    resstr = "\nres = requests.{post}('{url}', headers=headers)".format(post=post, url=url)
-print(resstr)
+if __name__ == "__main__":
+    if len(sys.argv) == 1:
+        command = 'curl "http://localhost:8080/api/v1/test" -H "Pragma: no-cache" -H "Accept-Encoding: gzip, deflate" -H "Accept-Language: en-US,en;q=0.8"'
+    else:
+        command = sys.argv[1]
+    code = curlToPython(command)
+    print('\n'.join(code))
