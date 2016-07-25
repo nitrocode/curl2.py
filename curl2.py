@@ -60,6 +60,28 @@ def curlToPython(command):
         pycode.append("{0})".format(resstr))
     return pycode
 
+def resToCurl(res):
+    """converts a requests response to a curl command
+
+    >>> res = requests.get('http://www.example.com')
+    >>> print resToCurl(res)
+    curl 'http://www.example.com/' -X 'GET' ...
+
+    Source: http://stackoverflow.com/a/17936634
+    """
+    req = res.request
+    command = "curl '{uri}' -X '{method}' -H {headers}"
+    method = req.method
+    uri = req.url
+    data = req.body
+    headers = ["{0}: {1}".format(k, v) for k, v in req.headers.items()]
+    headerLine = " -H ".join(['"{0}"'.format(h) for h in headers])
+    if method == 'GET':
+        return command.format(method=method, headers=headerLine, uri=uri)
+    else:
+        command += " --data-binary '{data}'"
+        return command.format(method=method, headers=headerLine, data=data, uri=uri)
+
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         command = 'curl "http://localhost:8080/api/v1/test" -H "Pragma: no-cache" -H "Accept-Encoding: gzip, deflate" -H "Accept-Language: en-US,en;q=0.8"'
