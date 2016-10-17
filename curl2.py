@@ -27,7 +27,7 @@ def curlToPython(command):
     for i, v in enumerate(args):
         if '-H' in v:
             myargs = args[i + 1].split(':')
-            headers[myargs[0]] = myargs[1].strip()
+            headers[myargs[0]] = ''.join(myargs[1:]).strip()
 
     pycode = []
 
