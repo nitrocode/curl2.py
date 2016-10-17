@@ -9,13 +9,19 @@
 import sys
 import shlex
 
+INDENT = 4
+
 def curlToPython(command):
     """convert curl command to python script"""
     # remove quotations
     args = shlex.split(command)
+    data = None
     # check for method
     if '-X' in args:
         method = args[args.index('-X') + 1]
+    elif '--data' in args:
+        method = 'post'
+        data = args[args.index('--data') + 1]
     else:
         method = 'get'
 
@@ -33,31 +39,35 @@ def curlToPython(command):
 
     # print code to stdout
     pycode.append("#!/usr/bin/env python")
-    pycode.append("import requests")
+    pycode.append("import requests\n")
 
     # check for a cookie
     bCook = 'Cookie' in headers
     if bCook:
         cookie = headers['Cookie']
         del headers['Cookie']
-        cook = cookie.split('=')
-        pycode.append("""cookies = {{
-  '{COOKIEID}': '{COOKIE}'
-}}""".format(COOKIEID=cook[0], COOKIE=cook[1]))
-
+        pycode.append("cookies = {")
+        for c in cookie.split(';'):
+            cook = c.split('=')
+            line = "{I}'{ID}': '{C}'".format(I=" " * INDENT, ID=cook[0].strip(), C=cook[1])
+            pycode.append(line)
+        pycode.append("}\n")
     # assumes there are headers
     pycode.append("headers = {")
     for k, v in headers.iteritems():
-        pycode.append("  '{k}': '{v}',".format(k=k, v=v))
-    pycode.append("}")
+        pycode.append(" " * INDENT + "'{k}': '{v}',".format(k=k, v=v))
+    pycode.append("}\n")
     pycode.append("url = '{0}'".format(url))
     # if there is a cookie, then attach it to the requests call
-    resstr = "res = requests.{method}(url, headers=headers".format(
-                method=method)
+    resstr = "res = requests.{method}(url, ".format(method=method)
+    append = "headers=headers"
     if bCook:
-        pycode.append("{0}, cookies=cookies)".format(resstr))
-    else:
-        pycode.append("{0})".format(resstr))
+        append += ", cookies=cookies"
+    if data:
+        pycode.append("data = '{0}'".format(data))
+        append += ", data=data"
+    pycode.append(resstr + append + ")")
+    pycode.append("print res.content\n")
     return pycode
 
 def resToCurl(res):
