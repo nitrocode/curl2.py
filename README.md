@@ -1,8 +1,8 @@
 # curl2.py
 
-Converts curl statements from Chrome's DevTools or Firefox's Tools to python.
+Converts curl statements from Chrome's DevTools or Firefox's Tools to executable python 2 and 3 compatible code.
 
-I was inspired to write a commandline version after seeing [Nick Carneiro's web version](http://curl.trillworks.com/)
+I was inspired to write a command line version after seeing Nick Carneiro's web app on  [curl.trillworks.com](http://curl.trillworks.com/).
 
 # Usage
 
@@ -12,14 +12,20 @@ I was inspired to write a commandline version after seeing [Nick Carneiro's web 
 
 3. Navigate to a website
 
-4. Right click on a call and click _Copy to curl_ or something similar
+4. Right click on a call and click _Copy > Copy as cURL_
 
-5. Run this script
+5. Create a virtual environment
 
     ```
-    python curl2.py 'curl "http://localhost:8080/api/v1/test" -H "Pragma: no-cache"'
-    
-    python curl2.py 'curl "http://localhost:8080/api/v1/test" -H "Pragma: no-cache"' > runme.py
-    chmod +x runme.py
-    ./runme.py
+    ✗ virtualenv env
+    ✗ . env/bin/activate
+    (env) ✗ pip install requests
+    ```
+
+5. Here is a template. Replace the curl statement with the one captured from the browser.
+
+    ```
+    (env) ✗ python curl2.py 'curl "http://example.com" -H "Pragma: no-cache"' > runme.py
+    (env) ✗ chmod +x runme.py
+    (env) ✗ ./runme.py
     ```
