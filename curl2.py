@@ -134,8 +134,12 @@ def curl_to_python(command):
 
     cookies = {}
     # gather all the cookies
-    if 'Cookie' in headers:
-        cookie = headers['Cookie']
+    if 'Cookie' in headers or 'cookie' in headers:
+        if 'Cookie' in headers:
+            cookie_key = 'Cookie'
+        else:
+            cookie_key = 'cookie'
+        cookie = headers[cookie_key]
         # remove cookies from headers because it will be added separately
         del headers['Cookie']
         cookies = dict([c.strip().split('=') for c in cookie.split(';')])
