@@ -141,8 +141,8 @@ def curl_to_python(command):
             cookie_key = 'cookie'
         cookie = headers[cookie_key]
         # remove cookies from headers because it will be added separately
-        del headers['Cookie']
-        cookies = dict([c.strip().split('=') for c in cookie.split(';')])
+        del headers[cookie_key]
+        cookies = dict([c.strip().split('=', 1) for c in cookie.split(';')])
 
     code = []
     code.append("#!/usr/bin/env python")
