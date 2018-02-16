@@ -3,8 +3,47 @@
 # Inspired by http://curl.trillworks.com/
 import sys
 import shlex
+import math
+
 
 INDENT = 4
+PRINTLINE = 80
+
+
+def print_key_val(init, value, pre_indent=0, end=','):
+    """Print the key and value and insert it into the code list.
+
+    :param init: string to initialize value e.g.
+                 "'key': " or "url = "
+    :param value: value to print in the dictionary
+    :param pre_indent: optional param to set the level of indentation,
+                       defaults to 0
+    :param end: optional param to set the end, defaults to comma
+    """
+    indent = INDENT * pre_indent
+    # indent is up to the first single quote
+    start = indent + len(init)
+    # 80 is the print line minus the starting indent
+    # minus 2 single quotes, 1 space, and 1 backslash
+    left = PRINTLINE - start - 4
+    code = []
+    code.append("{i}{s}'{v}'".format(i=" " * indent, s=init, v=value[:left]))
+    if len(value) > left:
+        code[-1] += " \\"
+        # figure out lines by taking the length of the value and dividing by
+        # chars left to the print line
+        lines = int(math.ceil(len(value) / float(left)))
+        for i in xrange(1, lines):
+            delim = " \\"
+            if i == lines - 1:
+                delim = end
+            code.append("{i}'{v}'{d}".format(i=" " * start,
+                                             v=value[i * left:(i+1) * left],
+                                             d=delim))
+    else:
+        code[-1] += end
+    return code
+
 
 def dict_to_code(name, simple_dict):
     """Converts a dictionary to a python compatible key value pair
@@ -21,10 +60,12 @@ def dict_to_code(name, simple_dict):
         # check for python3
         try:
             for k, v in simple_dict.items():
-                code.append("{i}'{k}': '{v}',".format(i=" " * INDENT, k=k, v=v))
+                init = "'{k}': ".format(k=k)
+                code += print_key_val(init, v, 1)
         except:
             for k, v in simple_dict.iteritems():
-                code.append("{i}'{k}': '{v}',".format(i=" " * INDENT, k=k, v=v))
+                init = "'{k}': ".format(k=k)
+                code += print_key_val(init, v, 1)
         code.append("}\n")
     return code
 
@@ -48,7 +89,7 @@ def create_request(url, method, cookies, headers, data=None):
     code += dict_to_code("cookies", cookies)
     # check for headers
     code += dict_to_code("headers", headers)
-    code.append("url = '{}'".format(url))
+    code += print_key_val("url = ", url, end='')
     resstr = "res = requests.{}(url, ".format(method)
     append = "headers=headers"
     # if there are cookies / data, then attach it to the requests call
@@ -110,7 +151,7 @@ def res_to_curl(res):
     """converts a requests response to a curl command
 
     >>> res = requests.get('http://www.example.com')
-    >>> print res_to_curl(res)
+    >>> print(res_to_curl(res))
     curl 'http://www.example.com/' -X 'GET' ...
 
     Source: http://stackoverflow.com/a/17936634
