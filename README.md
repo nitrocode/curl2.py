@@ -20,6 +20,6 @@ I was inspired to write a command line version after seeing @NickCarneiro's web 
 
 5. Here is a template. Replace the curl statement with the one captured from the browser.
 
-        curl2.py 'curl "http://example.com" -H "Pragma: no-cache"' > runme.py
+        curltopy 'curl "http://example.com" -H "Pragma: no-cache"' > runme.py
         chmod +x runme.py
         ./runme.py
