@@ -7,7 +7,7 @@ setup(
     author='',
     author_email='',
     description='Converts curl statements to python using command line',
-    url="https://github.com/nitrocode/curltopy",
+    url="https://github.com/nitrocode/curl2.py",
     packages=['curltopy'],
     scripts=['bin/curltopy']
 )
